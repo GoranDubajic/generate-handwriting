@@ -15,19 +15,19 @@ class Model():
     elif args.model == 'gru':
       cell_fn = tf.contrib.rnn.GRUCell
     elif args.model == 'lstm':
-      cell_fn = tf.contrib.rnn.BasicLSTMCell
+      cell_fn = tf.nn.rnn_cell.BasicLSTMCell
     else:
       raise Exception("model type not supported: {}".format(args.model))
 
     cell = cell_fn(args.rnn_size, state_is_tuple=False)
 
-    cell = tf.contrib.rnn.MultiRNNCell(
+    cell = tf.nn.rnn_cell.MultiRNNCell(
             [cell] * args.num_layers,
             state_is_tuple=False
         )
 
     if (infer == False and args.keep_prob < 1): # training mode
-      cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob = args.keep_prob)
+      cell = tf.nn.rnn_cell.DropoutWrapper(cell, output_keep_prob = args.keep_prob)
 
     self.cell = cell
 
