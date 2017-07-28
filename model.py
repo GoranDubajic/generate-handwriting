@@ -19,11 +19,17 @@ class Model():
     else:
       raise Exception("model type not supported: {}".format(args.model))
 
-    cell = cell_fn(args.rnn_size, state_is_tuple=False)
+    # cell = cell_fn(args.rnn_size, state_is_tuple=False)
+
+    stacked_cells = []
+
+    for i in range(args.num_layers):
+        stacked_cells.append(cell_fn(args.rnn_size, state_is_tuple=False))
 
     cell = tf.nn.rnn_cell.MultiRNNCell(
-            [cell] * args.num_layers,
-            state_is_tuple=False
+           # [cell] * args.num_layers,
+            stacked_cells,
+            state_is_tuple=True
         )
 
     if (infer == False and args.keep_prob < 1): # training mode
@@ -47,7 +53,9 @@ class Model():
     # inputs = [tf.squeeze(input_, [1]) for input_ in inputs]
     inputs = tf.unstack(self.input_data, axis=1)
     
-    outputs, state_out = tf.contrib.legacy_seq2seq.rnn_decoder(inputs, self.state_in, cell, loop_function=None, scope='rnnlm')
+    #outputs, state_out = tf.contrib.legacy_seq2seq.rnn_decoder(inputs, self.state_in, cell, loop_function=None, scope='rnnlm')
+    outputs, state_out = tf.contrib.legacy_seq2seq.rnn_decoder(inputs, tf.unstack(self.state_in, axis=0), cell, loop_function=None,
+                                                                   scope='rnnlm')
     output = tf.reshape(tf.concat(axis=1, values=outputs), [-1, args.rnn_size])
     output = tf.nn.xw_plus_b(output, output_w, output_b)
     self.state_out = tf.identity(state_out, name='state_out')
